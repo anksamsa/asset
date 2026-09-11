@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BPSM Asset Declaration — Link Builder</title>
+<style>
+  :root{
+    --ink:#1c2321;
+    --paper:#f6f5f1;
+    --line:#c9c4b8;
+    --accent:#8a3324;
+    --accent-ink:#fff;
+    --muted:#6b6459;
+    --field-bg:#fff;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"Georgia","Times New Roman",serif;
+    line-height:1.5;
+    padding:32px 16px 64px;
+  }
+  .wrap{max-width:720px;margin:0 auto;}
+  header{border-bottom:2px solid var(--ink);padding-bottom:14px;margin-bottom:28px;}
+  header .kicker{
+    font-family:"Courier New",monospace;
+    font-size:12px;
+    letter-spacing:0.04em;
+    color:var(--muted);
+    margin-bottom:6px;
+  }
+  h1{font-size:26px;margin:0 0 6px;font-weight:normal;}
+  header p{margin:0;color:var(--muted);font-size:14px;font-family:Arial,sans-serif;}
+
+  fieldset{
+    border:1px solid var(--line);
+    border-radius:2px;
+    padding:18px 20px 20px;
+    margin:0 0 18px;
+  }
+  legend{
+    font-family:Arial,sans-serif;
+    font-size:12px;
+    letter-spacing:0.03em;
+    color:var(--muted);
+    padding:0 6px;
+  }
+  .row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:12px;}
+  .row:last-child{margin-bottom:0;}
+  .field{flex:1 1 200px;}
+  label{
+    display:block;
+    font-family:Arial,sans-serif;
+    font-size:13px;
+    margin-bottom:5px;
+    color:var(--ink);
+  }
+  select, input[type=number], input[type=text]{
+    width:100%;
+    padding:9px 10px;
+    border:1px solid var(--line);
+    background:var(--field-bg);
+    font-family:Arial,sans-serif;
+    font-size:14px;
+    border-radius:2px;
+    color:var(--ink);
+  }
+  select:focus, input:focus{outline:2px solid var(--accent);outline-offset:1px;}
+
+  .mode-toggle{display:flex;border:1px solid var(--line);border-radius:2px;overflow:hidden;}
+  .mode-toggle button{
+    flex:1;
+    padding:9px 8px;
+    border:none;
+    background:var(--field-bg);
+    font-family:Arial,sans-serif;
+    font-size:13px;
+    cursor:pointer;
+    color:var(--muted);
+    border-right:1px solid var(--line);
+  }
+  .mode-toggle button:last-child{border-right:none;}
+  .mode-toggle button.active{background:var(--ink);color:var(--paper);}
+
+  .hint{font-family:Arial,sans-serif;font-size:12px;color:var(--muted);margin-top:6px;}
+
+  .actions{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap;}
+  button.go{
+    background:var(--accent);
+    color:var(--accent-ink);
+    border:none;
+    padding:12px 22px;
+    font-family:Arial,sans-serif;
+    font-size:14px;
+    border-radius:2px;
+    cursor:pointer;
+  }
+  button.go:hover{background:#6f281c;}
+  button.copy{
+    background:transparent;
+    border:1px solid var(--ink);
+    color:var(--ink);
+    padding:12px 18px;
+    font-family:Arial,sans-serif;
+    font-size:14px;
+    border-radius:2px;
+    cursor:pointer;
+  }
+
+  .url-preview{
+    margin-top:16px;
+    padding:12px 14px;
+    background:#fff;
+    border:1px solid var(--line);
+    font-family:"Courier New",monospace;
+    font-size:12.5px;
+    word-break:break-all;
+    color:var(--ink);
+  }
+
+  .note{
+    margin-top:32px;
+    border-top:1px dashed var(--line);
+    padding-top:18px;
+    font-family:Arial,sans-serif;
+    font-size:13px;
+    color:var(--muted);
+  }
+  .note strong{color:var(--ink);}
+  .note ol{padding-left:20px;}
+  .note li{margin-bottom:6px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="kicker">BPSM · Asset Declaration Records</div>
+    <h1>Link builder for AssetDetails.aspx</h1>
+    <p>Pick a year and a starting point, get the correct P1–P4 link, open it directly.</p>
+  </header>
+
+  <fieldset>
+    <legend>Year</legend>
+    <div class="row">
+      <div class="field">
+        <label for="year">Assets folder year</label>
+        <select id="year"></select>
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Starting point</legend>
+    <div class="row">
+      <div class="field">
+        <label>Browse by</label>
+        <div class="mode-toggle">
+          <button type="button" id="modeDept" class="active">Department → District</button>
+          <button type="button" id="modeDist">District → Department</button>
+          <button type="button" id="modeDeptOnly">Department only</button>
+          <button type="button" id="modeDistOnly">District only</button>
+        </div>
+        <div class="hint" id="modeHint">P1=1 — pick a department, then a district within it.</div>
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset id="fsDept">
+    <legend>Department</legend>
+    <div class="row">
+      <div class="field">
+        <label for="dept">Department</label>
+        <select id="dept"></select>
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset id="fsDist">
+    <legend>District</legend>
+    <div class="row">
+      <div class="field">
+        <label for="distSelect">District</label>
+        <select id="distSelect"></select>
+      </div>
+    </div>
+  </fieldset>
+
+  <div class="actions">
+    <button class="go" id="openBtn">Open this page ↗</button>
+    <button class="copy" id="copyBtn">Copy link</button>
+  </div>
+
+  <div class="url-preview" id="urlPreview">—</div>
+
+  <fieldset id="fsSearch">
+    <legend>Search employees on this page</legend>
+    <div class="row">
+      <div class="field" style="flex:0 0 140px;">
+        <label for="searchMode">Search by</label>
+        <select id="searchMode">
+          <option value="name">Name</option>
+          <option value="designation">Designation</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="searchQuery">Search term</label>
+        <input type="text" id="searchQuery" placeholder="e.g. ANKUR">
+      </div>
+      <div class="field" style="flex:0 0 auto;align-self:flex-end;">
+        <button class="go" id="searchBtn" type="button">Search</button>
+      </div>
+    </div>
+    <div class="hint">Requires <code>bpsm_server.py</code> running locally — see note below. This calls your own machine, not bpsm.bihar.gov.in directly, so plain file-opening won't work here.</div>
+    <div id="searchStatus" class="hint"></div>
+    <table id="resultsTable" style="width:100%;border-collapse:collapse;margin-top:12px;display:none;">
+      <thead>
+        <tr style="text-align:left;font-family:Arial,sans-serif;font-size:12px;color:var(--muted);border-bottom:1px solid var(--line);">
+          <th style="padding:6px 4px;">Office</th>
+          <th style="padding:6px 4px;">Designation</th>
+          <th style="padding:6px 4px;">Name</th>
+          <th style="padding:6px 4px;">PDF</th>
+        </tr>
+      </thead>
+      <tbody id="resultsBody" style="font-family:Arial,sans-serif;font-size:13px;"></tbody>
+    </table>
+  </fieldset>
+
+  <div class="note">
+    <strong>Running the live search above</strong>
+    <ol>
+      <li>Keep <code>bpsm-navigator.html</code>, <code>bpsm_search.py</code>, and <code>bpsm_server.py</code> in the same folder.</li>
+      <li><code>pip install flask requests beautifulsoup4</code></li>
+      <li>Run <code>python bpsm_server.py</code> in a terminal.</li>
+      <li>Open <strong>http://127.0.0.1:5000/</strong> in your browser — not this file directly. The search box only works when the page is served from that local address, since it talks to the local server, not bpsm.bihar.gov.in, directly from the browser.</li>
+    </ol>
+    <p>That indirection exists because browsers block cross-origin requests from a plain HTML file straight to bpsm.bihar.gov.in (CORS) — the local server does that part instead and just hands the results back to the page.</p>
+  </div>
+</div>
+
+<script>
+const DEPARTMENTS = [
+  {code:1,name:"ANIMAL AND FISHERY RESOURCES"},
+  {code:2,name:"BC AND EBC WELFARE DEPARTMENT"},
+  {code:3,name:"BUILDING CONSTRUCTION DEPARTMENT"},
+  {code:4,name:"CABINET SECRETARIAT DEPARTMENT"},
+  {code:5,name:"COMMERCIAL TAXES"},
+  {code:6,name:"CO-OPERATIVE DEPARTMENT"},
+  {code:8,name:"DEPARTMENT OF AGRICULTURE"},
+  {code:9,name:"DISASTER MANAGEMENT"},
+  {code:18,name:"EDUCATION DEPARTMENT"},
+  {code:10,name:"ELECTION DEPARTMENT"},
+  {code:12,name:"ENVIRONMENT AND FOREST DEPARTMENT"},
+  {code:13,name:"FINANCE DEPARTMENT"},
+  {code:14,name:"FOOD AND CONSUMER PROTECTION"},
+  {code:15,name:"GENERAL ADMINISTRATION DEPARTMENT"},
+  {code:16,name:"HEALTH AND FAMILY WELFARE"},
+  {code:17,name:"HOME DEPARTMENT"},
+  {code:19,name:"INDUSTRY"},
+  {code:20,name:"INFORMATION AND PUBLIC RELATIONS"},
+  {code:22,name:"LABOUR RESOURCES"},
+  {code:24,name:"MINES AND GEOLOGY DEPARTMENT"},
+  {code:25,name:"MINOR WATER RESOURCES"},
+  {code:26,name:"MINORITY WELFARE DEPARTMENT"},
+  {code:27,name:"PANCHAYATI RAJ"},
+  {code:28,name:"PLANNING AND DEVELOPMENT"},
+  {code:29,name:"PUBLIC HEALTH ENGINEERING DEPARTMENT"},
+  {code:30,name:"REGISTRATION EXCISE AND PROHIBITION DEPARTMENT"},
+  {code:31,name:"REVENUE AND LAND REFORMS"},
+  {code:32,name:"ROAD CONSTRUCTION DEPARTMENT"},
+  {code:33,name:"RURAL DEVELOPMENT DEPARTMENT"},
+  {code:34,name:"RURAL WORKS DEPARTMENT"},
+  {code:36,name:"SCIENCE AND TECHNOLOGY DEPARTMENT"},
+  {code:37,name:"SOCIAL WELFARE DEPARTMENT"},
+  {code:38,name:"SUGARCANE INDUSTRY DEPARTMENT"},
+  {code:40,name:"TRANSPORT DEPARTMENT"},
+  {code:41,name:"URBAN DEVELOPMENT DEPARTMENT"},
+  {code:43,name:"WATER RESOURCES DEPARTMENT"},
+  {code:75,name:"BIHAR STATE FOOD & CIVIL SUPPLY CORPORATION"},
+  {code:298,name:"BIHAR STATE POWER TRANSMISSION COMPANY LIMITED"},
+  {code:296,name:"SOUTH BIHAR POWER DISTRIBUTION COMPANY LIMITED"}
+];
+
+const DISTRICTS = [
+  {code:7,name:"ARARIA"},
+  {code:33,name:"ARWAL"},
+  {code:35,name:"AURANGABAD"},
+  {code:23,name:"BANKA"},
+  {code:20,name:"BEGUSARAI"},
+  {code:22,name:"BHAGALPUR"},
+  {code:29,name:"BHOJPUR"},
+  {code:30,name:"BUXAR"},
+  {code:13,name:"DARBHANGA"},
+  {code:36,name:"GAYA"},
+  {code:15,name:"GOPALGANJ"},
+  {code:38,name:"JAMUI"},
+  {code:34,name:"JEHANABAD"},
+  {code:31,name:"KAIMUR (BHABUA)"},
+  {code:10,name:"KATIHAR"},
+  {code:21,name:"KHAGARIA"},
+  {code:8,name:"KISHANGANJ"},
+  {code:25,name:"LAKHISARAI"},
+  {code:11,name:"MADHEPURA"},
+  {code:5,name:"MADHUBANI"},
+  {code:24,name:"MUNGER"},
+  {code:14,name:"MUZAFFARPUR"},
+  {code:27,name:"NALANDA"},
+  {code:37,name:"NAWADA"},
+  {code:1,name:"PASHCHIM CHAMPARAN"},
+  {code:28,name:"PATNA"},
+  {code:9,name:"PURNIA"},
+  {code:2,name:"PURVI CHAMPARAN"},
+  {code:32,name:"ROHTAS"},
+  {code:12,name:"SAHARSA"},
+  {code:19,name:"SAMASTIPUR"},
+  {code:17,name:"SARAN"},
+  {code:26,name:"SHEIKHPURA"},
+  {code:3,name:"SHEOHAR"},
+  {code:4,name:"SITAMARHI"},
+  {code:16,name:"SIWAN"},
+  {code:6,name:"SUPAUL"},
+  {code:18,name:"VAISHALI"}
+];
+
+const yearSel = document.getElementById('year');
+for (let y = 2026; y >= 2011; y--) {
+  const opt = document.createElement('option');
+  opt.value = y; opt.textContent = y;
+  yearSel.appendChild(opt);
+}
+
+const deptSel = document.getElementById('dept');
+DEPARTMENTS.slice().sort((a,b)=>a.name.localeCompare(b.name)).forEach(d=>{
+  const opt = document.createElement('option');
+  opt.value = d.code; opt.textContent = d.name + " (" + d.code + ")";
+  deptSel.appendChild(opt);
+});
+
+const distSelect = document.getElementById('distSelect');
+DISTRICTS.slice().sort((a,b)=>a.name.localeCompare(b.name)).forEach(d=>{
+  const opt = document.createElement('option');
+  opt.value = d.code; opt.textContent = d.name + " (" + d.code + ")";
+  if (d.code === 28) opt.selected = true;
+  distSelect.appendChild(opt);
+});
+
+let mode = 'dept'; // 'dept' (P1=1,P4=2), 'dist' (P1=2,P4=1), 'deptOnly' (P1=1,P4=0), 'distOnly' (P1=2,P4=0)
+const modeDeptBtn = document.getElementById('modeDept');
+const modeDistBtn = document.getElementById('modeDist');
+const modeDeptOnlyBtn = document.getElementById('modeDeptOnly');
+const modeDistOnlyBtn = document.getElementById('modeDistOnly');
+const modeHint = document.getElementById('modeHint');
+const fsDept = document.getElementById('fsDept');
+const fsDist = document.getElementById('fsDist');
+
+const MODE_INFO = {
+  dept:     {hint: "P1=1 — pick a department, then a district within it.", showDept: true,  showDist: true},
+  dist:     {hint: "P1=2 — pick a district, then a department within it.", showDept: true,  showDist: true},
+  deptOnly: {hint: "P1=1, P3=0 — every district under one department.",     showDept: true,  showDist: false},
+  distOnly: {hint: "P1=2, P3=0 — every department under one district.",     showDept: false, showDist: true}
+};
+
+function setMode(m){
+  mode = m;
+  [modeDeptBtn, modeDistBtn, modeDeptOnlyBtn, modeDistOnlyBtn].forEach(b => b.classList.remove('active'));
+  ({dept: modeDeptBtn, dist: modeDistBtn, deptOnly: modeDeptOnlyBtn, distOnly: modeDistOnlyBtn})[m].classList.add('active');
+  const info = MODE_INFO[m];
+  modeHint.textContent = info.hint;
+  fsDept.style.display = info.showDept ? '' : 'none';
+  fsDist.style.display = info.showDist ? '' : 'none';
+  buildUrl();
+}
+modeDeptBtn.addEventListener('click', ()=>setMode('dept'));
+modeDistBtn.addEventListener('click', ()=>setMode('dist'));
+modeDeptOnlyBtn.addEventListener('click', ()=>setMode('deptOnly'));
+modeDistOnlyBtn.addEventListener('click', ()=>setMode('distOnly'));
+
+function currentParams(){
+  const year = yearSel.value;
+  const deptCode = deptSel.value;
+  const distCode = distSelect.value;
+  if (mode === 'dept')     return {year, p1:1, p2:deptCode, p3:distCode||0, p4:2};
+  if (mode === 'dist')     return {year, p1:2, p2:distCode||0, p3:deptCode, p4:1};
+  if (mode === 'deptOnly') return {year, p1:1, p2:deptCode, p3:0, p4:0};
+  return {year, p1:2, p2:distCode||0, p3:0, p4:0};
+}
+
+function buildUrl(){
+  const {year, p1, p2, p3, p4} = currentParams();
+  const url = `https://bpsm.bihar.gov.in/Assets${year}/AssetDetails.aspx?P1=${p1}&P2=${p2}&P3=${p3}&P4=${p4}`;
+  document.getElementById('urlPreview').textContent = url;
+  return url;
+}
+
+[yearSel, deptSel, distSelect].forEach(el=>{
+  el.addEventListener('input', buildUrl);
+  el.addEventListener('change', buildUrl);
+});
+
+document.getElementById('openBtn').addEventListener('click', ()=>{
+  window.open(buildUrl(), '_blank');
+});
+document.getElementById('copyBtn').addEventListener('click', ()=>{
+  const url = buildUrl();
+  navigator.clipboard.writeText(url).then(()=>{
+    const btn = document.getElementById('copyBtn');
+    const old = btn.textContent;
+    btn.textContent = 'Copied';
+    setTimeout(()=>btn.textContent = old, 1200);
+  });
+});
+
+buildUrl();
+
+// --- Live search (requires bpsm_server.py running, page served from it) ---
+const searchBtn = document.getElementById('searchBtn');
+const searchStatus = document.getElementById('searchStatus');
+const resultsTable = document.getElementById('resultsTable');
+const resultsBody = document.getElementById('resultsBody');
+
+searchBtn.addEventListener('click', async ()=>{
+  const query = document.getElementById('searchQuery').value.trim();
+  const searchMode = document.getElementById('searchMode').value;
+  if (!query) { searchStatus.textContent = 'Enter a search term first.'; return; }
+
+  const {year, p1, p2, p3, p4} = currentParams();
+  searchStatus.textContent = 'Searching…';
+  resultsTable.style.display = 'none';
+  resultsBody.innerHTML = '';
+
+  try {
+    const params = new URLSearchParams({year, p1, p2, p3, p4, mode: searchMode, query});
+    const res = await fetch(`/api/search?${params}`);
+    const data = await res.json();
+
+    if (!res.ok) {
+      searchStatus.textContent = 'Error: ' + (data.error || res.statusText) +
+        ' — is bpsm_server.py running, and is this page open at http://127.0.0.1:5000/ ?';
+      return;
+    }
+    if (data.rows.length === 0) {
+      searchStatus.textContent = 'No results.';
+      return;
+    }
+
+    searchStatus.textContent = `${data.rows.length} result(s).`;
+    resultsTable.style.display = '';
+    data.rows.forEach(row=>{
+      const tr = document.createElement('tr');
+      tr.style.borderBottom = '1px solid var(--line)';
+      const pdfCell = row.has_pdf
+        ? `<a href="/api/download?session_id=${encodeURIComponent(data.session_id)}&index=${row.index}" target="_blank">Download</a>`
+        : '—';
+      tr.innerHTML = `
+        <td style="padding:6px 4px;">${row.office}</td>
+        <td style="padding:6px 4px;">${row.designation}</td>
+        <td style="padding:6px 4px;">${row.name}</td>
+        <td style="padding:6px 4px;">${pdfCell}</td>
+      `;
+      resultsBody.appendChild(tr);
+    });
+  } catch (err) {
+    searchStatus.textContent = 'Could not reach the local server. Is bpsm_server.py running, and is this page open at http://127.0.0.1:5000/ ?';
+  }
+});
+</script>
+</body>
+</html>
